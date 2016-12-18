@@ -514,7 +514,7 @@ class script_box(QTextEdit):
         tempcurs=self.textCursor()
         a=tempcurs.position()
 #        print a
-        script=self.getInput().replace('<span style=" color:#0000ff;">',"")#FUCK HTML AND CSS
+        script=self.getInput().replace('<span style=" color:#0000ff;">',"")
         
 
 
