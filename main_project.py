@@ -16,13 +16,11 @@ import os
 import re
 import openpyxl as xl
 import encodeindex
+from codeParser import codeParser
 import pickle as pickle
-
-#from linetextedit1 import LineTextWidget
 
 from PyQt5.QtWidgets import (QTabWidget,QApplication, QDialog, QLineEdit, QVBoxLayout,QHBoxLayout, QGridLayout, QTableWidget, QTableWidgetItem,
                              QMainWindow, QAction, QFileDialog, QMessageBox, QComboBox, QTextEdit, QPushButton,QHeaderView)
-#from PyQt5.QtGui import QColor, QTextCursor,QBrush,QTextCharFormat
 import PyQt5.QtGui as QtGui
 from PyQt5.QtCore import QObject, pyqtSignal, Qt,QRegExp
 
@@ -49,11 +47,7 @@ class MainWindow(QMainWindow):
     
     def __init__(self, parent=None) :
         super(MainWindow, self).__init__(parent)
-        
-        
-        #Change the output stream
-        
-    
+   
         # Create the file menu
         
         self.menuFile = self.menuBar().addMenu("&File")
@@ -93,15 +87,8 @@ class MainWindow(QMainWindow):
         
         
 
-#        sys.stderr = EmittingStream(textWritten=self.normalOutputWritten)
+#        sys.stderr = EmittingStream(textWritten=self.normalOutputWritten) ###UNCOMMENT THIS OF YOU WANT INTERNAL ERRORS REROUTED TO THE OUTPUT BOX
         self.newspreadsheet()
-        
-                
-#        try:
-#        self.widget1.command.returnPressed.connect(self.widget1.userExec)
-#        except:
-#            print "error connection failed"
-
 
 
 ########SAVE THIS IT'S CLOSE TO WORKING
@@ -135,7 +122,7 @@ class MainWindow(QMainWindow):
                  b.write(a)
                  b.close
             except:
-                raise ValueError    
+                print "error opening file"  
                 
     def openscript(self):
         fname = unicode(QFileDialog.getOpenFileName(self, "Open")[0])
@@ -202,26 +189,16 @@ class MainWindow(QMainWindow):
         """ Save the computed data as a text file. """
 
 
-        fname = unicode(QFileDialog.getSaveFileName(self, "Save as...")[0])  #AT LAST I HAVE MY VICTORY, THIS METHOD RETURNS A TUPLE, AND I HAD TO SELECT A SPECIFIC VALUE TO PASS TO THE UNICODE TYPE CAST
+        fname = unicode(QFileDialog.getSaveFileName(self, "Save as...")[0])
         if fname :
-        
-
-
             try:
-
                  self.widget1.scr.edit.activeWB.save(filename = fname)
-                
             except:
-                raise ValueError
+                print "error opening file"
                 
     def normalOutputWritten(self, text):
         """Append text to the QTextEdit."""
 
-#        cursor = self.widget1.cmd.textCursor()
-#        cursor.movePosition(QTextCursor.End)
-#        cursor.insertText(text)
-#        self.widget1.cmd.setTextCursor(cursor)
-#        self.widget1.cmd.ensureCursorVisible()
         if text!="\n":
             self.widget1.cmd.append("\n"+text)
                 
@@ -240,24 +217,16 @@ class Form(QDialog) :
         self.cmd=outputbox()
         
         self.command=commandLine()
-        try:
-            self.command.returnPressed.connect(self.userExec) 
-        except:
-            print "error-yousuck"
-            
+        self.command.returnPressed.connect(self.userExec) 
+
         self.table = QTabWidget(self)
         
         self.vars = QTableWidget(5,2,self)
-
-#        header.setSectionResizeMode(1)
-#        header.setSectionResizeMode(3)
-
+        self.vars.setColumnCount(2)
 
         header = self.vars.horizontalHeader()
         header.setSectionResizeMode(3)
         header.setStretchLastSection(True)
-
-#        self.l=LineTextWidget()
 
         # Define the layout
         layout = QGridLayout()
@@ -272,12 +241,11 @@ class Form(QDialog) :
         layout3.addWidget(self.clear_button)
         layout3.addWidget(self.vars)
         layout2.addLayout(layout3)
-#        layout1.addWidget(self.l)
         layout.addWidget(self.table,0,0)
-#        layout.addWidget(self.vars,0,2)
         layout.addLayout(layout2,0,1)
         self.setLayout(layout)
         self.table.currentChanged.connect(self.switch_tabs_wb)
+		
         # Connect our output box to the update function
         try:
             self.run_button.clicked.connect(self.userExec) 
@@ -285,6 +253,7 @@ class Form(QDialog) :
             print "error"
         self.locals={}
         self.flag=True
+		
 
     def clear_vars(self):
         
@@ -300,36 +269,23 @@ class Form(QDialog) :
     def userExec(self) :
         """ Method for executing user code"""
         signal_sender=self.sender()
-        fil_g5h6j1n2l530kdmcgkr=open("script.py",'w')#anything I declare here 
-#will interfere with the user input when it is imported, hence the name
-        fil_g5h6j1n2l530kdmcgkr.write(self.scr.edit.getCode())
-        fil_g5h6j1n2l530kdmcgkr.close()
-#        a=a.replace(" ","")
-#        self.scr.setHtml(a)
-#        b=os.path.abspath("mydir/myfile.txt")
-        cmd=0
-        if isinstance(signal_sender, commandLine):
-            cmd=15
 
-#        os.system('python script.py')#this is one possible way to do it
-#        import script
         flag_error_exception=True
         try:
-            if self.flag:
-                if cmd==0:
-                    exec(self.scr.edit.getCode())
+            if self.flag:#is this the first execution? if so, no need to pass in self.locals because it doesn't exist yet
+                if isinstance(signal_sender, QPushButton):#check the sender type so we know where to get the code from
+                    exec(self.scr.edit.getCode())#execute code from script box
                     self.flag=False
-                elif cmd == 15:
-                    exec(self.command.getCode())
+                elif isinstance(signal_sender, commandLine):
+                    exec(self.command.getCode())#execute code from command line
                     self.flag=False
                 else:
                     print "error in execution handling:1"
-            else:
-                if cmd==0:
+            else:#if this is not the first execution of user code, self.locals is populated (unless the user pressed clear vars) and needs to be passed into exec
+                if isinstance(signal_sender, QPushButton):
                     glob=globals()
-                    exec(self.scr.edit.getCode(),glob,self.locals)  #this is mind boggling
-    #            print self.locals
-                elif cmd==15:
+                    exec(self.scr.edit.getCode(),glob,self.locals)
+                elif isinstance(signal_sender, commandLine):
                     glob=globals()
                     exec(self.command.getCode(),glob,self.locals)
                 else:
@@ -348,33 +304,24 @@ class Form(QDialog) :
         else:
             pass
         if not flag_error_exception:
-            if cmd==0:
-                print("%s at line %d: %s" % (error_class, line_number-2, detail))
+            if isinstance(signal_sender, QPushButton):
+                print("%s at line %d: %s" % (error_class, line_number-2, detail))#print error details
             else:
-                print("%s: %s" % (error_class, detail))
+                print("%s: %s" % (error_class, detail))#don't give line numbers if it was a command line execution, because that would make no sense
 
 
-
-#        exec(self.scr.getCode())
-
+        self.updateUI()  #update the spreadsheet viewer
         
-#        try:
-        self.updateUI()
+
+	#set variables in self.locals to show up in the variable viewer
         count=0
-        self.vars.setColumnCount(2)
         self.vars.setRowCount(len(self.locals)-6)
-#        print self.locals
+
         for i in self.locals:
-#            if (i!="wb")| (i!="cmd")| (i!="flag_error_exception") | (i!="self")|(i!="fil_g5h6j1n2l530kdmcgkr"):
-            if (i!="wb") and (i!="cmd") and (i!="flag_error_exception") and (i!="self") and (i!="fil_g5h6j1n2l530kdmcgkr") and (i!="signal_sender"):
-                
+            if (i!="wb") and (i!="flag_error_exception") and (i!="self") and (i!="signal_sender"):
                 self.vars.setItem(count,0,QTableWidgetItem(str(i)))
-#                print str(i)+"\n"
                 self.vars.setItem(count,1,QTableWidgetItem(str(self.locals[i])))
-#                print str(self.locals[i])+"\n"
                 count+=1
-#        except:
-#            print "error updating UI"
 
     def addWS(self,a):
         self.scr.edit.activeWB[self.scr.edit.WBindex].create_sheet(a)
@@ -382,14 +329,10 @@ class Form(QDialog) :
         return self.scr.edit.activeWS
         
     def addWB(self,a):
-#        a=a.group()
+
         self.scr.edit.activeWB.append(xl.Workbook())
-#        d=self.scr.edit.activeWB[len(self.scr.edit.activeWB)-1].worksheets
         d=self.scr.edit.activeWB[-1].worksheets
-#        d=self.widget1.scr.edit.activeWB.worksheets
         self.scr.edit.activeWS.append(d)
-#        print type(self.widget1.scr.edit.activeWS[0])
-#        self.widget1.scr.edit.activeWS=d
         z=QTableWidget(0,0,self)
         v=QTabWidget()
         v.currentChanged.connect(self.switch_tabs_ws)
@@ -401,7 +344,6 @@ class Form(QDialog) :
         self.table.addTab(v,a)
         return self.scr.edit.activeWS
         
-#    def setActiveWS(self,a):
         
         
     def updateUI(self):
@@ -409,17 +351,13 @@ class Form(QDialog) :
         for s in range(0,len(k)):
      
             d=self.scr.edit.activeWB[s].worksheets
-#            print d
             for i in range(0,len(d)-self.table.widget(s).count()):
                 c=self.table.widget(s).count()
                 z=QTableWidget(1,1,self)
                 if(d[c]["A1"]==None):
                     d[c]["A1"]=0
                 self.scr.edit.activeWS[s].append(d[c])
-#                z.currentChanged.connect(self.switch_tabs_ws)
                 self.table.widget(s).addTab(z,str(d[c].title))
-    #        self.widget1.scr.edit.activeWS.append(d)
-    #            self.widget1.scr.edit.activeWS.append(self.widget1.scr.edit.activeWB[len(self.widget1.scr.edit.activeWB)-1].active)
             for v in range(0,len(d)):
                 z=self.table.widget(s).widget(v)
                 z.setRowCount(d[v].max_row)
@@ -427,23 +365,11 @@ class Form(QDialog) :
                 a=d[v].iter_rows()
                 for i in range(0,int(d[v].max_row)):
                         b=a.next()
-#                        print z
+
                         for j in range(0,int(d[v].max_column)):
                             if (str(b[j].value) != 'None'):
                                 z.setItem(i,j,QTableWidgetItem(str(b[j].value)))
-#                                print str(b[j].value)
 
-#            self.scr.edit.activeWS=self.scr.edit.activeWB.active
-#            self.table.setRowCount(self.scr.edit.activeWS.max_row)
-#            self.table.setColumnCount(self.scr.edit.activeWS.max_column)
-#            a=self.scr.edit.activeWS.iter_rows()
-#            for i in range(0,int(self.scr.edit.activeWS.max_row)):
-#                b=a.next()
-#                for j in range(0,int(self.scr.edit.activeWS.max_column)):
-#                    if (str(b[j].value) != 'None'):
-#                        self.table.setItem(i,j,QTableWidgetItem(str(b[j].value)))
-#                    else:
-#                        self.table.setItem(i,j,QTableWidgetItem(str("")))
     def switch_tabs_ws(self):
         try:
             self.scr.edit.WSindex=self.table.widget(self.scr.edit.WBindex).currentIndex()
@@ -467,62 +393,14 @@ class script_box(QTextEdit):
         self.WBNames=[]
         self.setTabStopWidth(50)
         self.textChanged.connect(self.updateScript)
+        self.parseCode=codeParser()
 
     def updateScript(self):
-##        try:
-###            self.setHtml(self.getInput())
-##            a=self.getInput()
-##            fil_g5h6j1n2l530kdmcgkr=open("html.py",'w')#anything I declare here 
-###will interfere with the user input when it is imported, hence the name
-##            fil_g5h6j1n2l530kdmcgkr.write(a)
-##            fil_g5h6j1n2l530kdmcgkr.close()
-##        except:
-##            msg=QMessageBox()
-##            msg.setText('error: Phillip Dix is bad at code')
-##            msg.setStandardButtons(QMessageBox.Ok)
-##            msg.exec_()
-#
-#        a=re.finditer(r'[ \t\n\r\f\v+-=*()][A-Z]+\d+[ \t\n\r\f\v+-=*()]',self.document().toPlainText())
-#        while (1==1):
-#            try:
-#                b=a.next()
-#                c=b.group()
-##                print c
-#                self.find(c)
-#                x=self.currentCharFormat()
-#                x.setFontWeight(150)
-#                self.setCurrentCharFormat(x)
-##                cursor = self.textCursor()
-##
-##                format = cursor.charFormat()
-##
-##                format.setBackground(Qt.red)
-##                format.setForeground(Qt.blue)
-##                textSelected = cursor.selectedText()
-##                print textSelected
-##                cursor.setCharFormat(format)
-###                self.setTextColor(QColor(0, 0, 255, 127))
-#            except StopIteration:
-#                break
-##            except:  #commented for report writing
-##                pass
-##                msg=QMessageBox()
-##                msg.setText('error: Phillip Dix is bad at code')
-##                msg.setStandardButtons(QMessageBox.Ok)
-##                msg.exec_()
         
         tempcurs=self.textCursor()
         a=tempcurs.position()
-#        print a
-        script=self.getInput().replace('<span style=" color:#0000ff;">',"")
-        
-
-
-        fil_g5h6j1n2l530kdmcgkr=open("html.html",'w')#anything I declare here 
-#will interfere with the user input when it is imported, hence the name
-        fil_g5h6j1n2l530kdmcgkr.write(script)
-        fil_g5h6j1n2l530kdmcgkr.close()
-
+        script=self.document().toHtml()
+        script=self.parseCode.getInput(script)
         
         self.blockSignals(True) #block signals to prevent infinite loops
         self.document().setHtml(script)
@@ -533,213 +411,42 @@ class script_box(QTextEdit):
     def getCode(self):
         #method for parsing and returning user input code
         script=self.document().toPlainText()
-        script='\n'+script+'\n'
-        pattern0=r'[ \t\n\r\f\v+-=*()\[\]][A-Z]+\d+[ \t\n\r\f\v+-=*()\.]'
-        pattern1=r'[ \t\n\r\f\v+-=*()\[][A-Z]+\d+[ \t\n\r\f\v+-=*()\.]'
-        pattern2=r'=(.*wb\[self.scr.edit.WBindex\]\[self.scr.edit.WSindex\]\["[A-Z]+\d+"\].*)+'
-        pattern3=r'\[\s*[A-Z]+\d+\s*-\s*[A-Z]+\d+\s*\]'
-        pattern4=r'\snewWorkbook\(["\'].+["\']\)\s'
-        pattern5=r'\ssetActiveWorkbook\(\d+\)\s'
-        pattern6=r'\snewWorksheet\(["\'].+["\']\)\s'
-        pattern7=r'\ssetActiveWorksheet\(\d+\)\s'
-        re.MULTILINE=True
-        script=re.sub(pattern3,self.rep3,script)        
-        while (re.search(pattern1,script)!=None): #capture overlapping instances of the pattern
-            script=re.sub(pattern1,self.rep1,script)
-        while (re.search(pattern0,script)!=None): #capture overlapping instances of the pattern
-            script=re.sub(pattern0,self.rep0,script)
-            
-        if "using cells as value" in script:
-            script=re.sub(pattern2,self.rep2,script)
-            script=script.replace("using cells as value","\n")
-        script=re.sub(pattern4,self.rep4,script)
-        script=re.sub(pattern5,self.rep5,script)
-        script=re.sub(pattern6,self.rep6,script)
-        script=re.sub(pattern7,self.rep7,script)
-#        a='import openpyxl as xl\nwb=xl.load_workbook("'+self.WBNames[0]+'")\n'
-        a='wb=self.scr.edit.activeWS\n'
-        script=a+script+"\nself.locals=locals()"
-#        script=re.sub('\n','\n\t',script)
+        script=self.parseCode.getCode(script)
         return script
-        
-    def rep7(self,a):
-        a=a.group()
-#        print a
-        z=re.findall(r'\s',a)
-        b=re.search(r'\d+',a)
-        c=z[0]+"self.scr.edit.WSindex="+b.group()+z[1]
- #       print c
-        return c
-    def rep6(self,a):
-        a=a.group()
-        z=re.findall(r'\s',a)
-        b=re.search(r'[\'"].+[\'"]',a)
-#        print b
-        c="wb=self.addWS("+b.group()+")"
-#        print c
-        return z[0]+c+z[1]
-#    def rep5(self,a):
-#        a=a.group()
-#        a=re.sub(r'd+',self.rep5_1,a)
-#        b=re.search(r'\$.*\$',a)
-#        c=re.findall(r'\s',a)
-#        b=b.group()[1:-1]
-#        a=c[0]+b+c[1]
-#        return a
-#    def rep5_1(self,a):
-#        a=a.group()
-#        b="$self.scr.edit.WBindex="+a+"$"
-#        return b
-
-    def rep5(self,a):
-        a=a.group()
-#        print a
-        z=re.findall(r'\s',a)
-        b=re.search(r'\d+',a)
-        c=z[0]+"self.scr.edit.WBindex="+b.group()+z[1]  #note that this DOES NOT change the active worksheet, possibly leading to an out of bounds error if my user is not careful
- #       print c
-        return c
-        
-    def rep4(self,a):
-        a=a.group()
-        z=re.findall(r'\s',a)
-        b=re.search(r'[\'"].+[\'"]',a)
-#        print b
-        c="wb=self.addWB("+b.group()+")"
-#        a=re.sub(r'".+"',self.rep4_1,a)
-        return z[0]+c+z[1]
-#    def rep4_1(self,a):
-#        return "wb=self.addWB("+a+")"
-#        a=a.group()
-#        self.scr.edit.activeWB.append(xl.Workbook())
-#        d=self.scr.edit.activeWB[len(self.widget1.scr.edit.activeWB)-1].worksheets
-##        d=self.widget1.scr.edit.activeWB.worksheets
-#        self.scr.edit.activeWS.append(d)
-##        print type(self.widget1.scr.edit.activeWS[0])
-##        self.widget1.scr.edit.activeWS=d
-#        z=QTableWidget(0,0,self)
-#        v=QTabWidget()
-#        v.currentChanged.connect(self.switch_tabs_ws)
-#        s=self.scr.edit.activeWS[0][0]
-#        for i in s['A1':'Z100']:
-#                for j in i:
-#                    j.value=''
-#        v.addTab(z,"NewSheet")
-#        self.table.addTab(v,a)
-#        self.updateUI()
-#        return ""
-#        
-    def rep0(self,matchobj):
-        a=matchobj.group()
-        a=re.sub(r'[A-Z]+\d+',self.rep1_0,a)
-        #need to implement an easy user command to change active ws
-        return a
-    def rep1_0(self,matchobj1):
-        a=matchobj1.group()
-        rep='["'+a+'"]'
-        return rep
-        
-    def rep1(self,matchobj):
-        a=matchobj.group()
-        a=re.sub(r'[A-Z]+\d+',self.rep1_1,a)
-        #need to implement an easy user command to change active ws
-        return a
-    def rep1_1(self,matchobj1):
-        a=matchobj1.group()
-        rep='wb[self.scr.edit.WBindex][self.scr.edit.WSindex]["'+a+'"]'
-        return rep
-    def rep2(self,matchobj):
-        a=matchobj.group()
-        a=re.sub(r'wb\[self.scr.edit.WBindex\]\[self.scr.edit.WSindex\]\["[A-Z]+\d+"\]',self.rep2_2,a)
-        #need to implement an easy user command to change active ws
-        return a
-    def rep2_2(self,matchobj1):
-        a=matchobj1.group()
-        rep=a+'.value'
-        return rep
-    def rep3(self,b):
-        a=b.group()
-        a=a.replace(' ','')
-        c=re.findall(r'\d+',a)
-        d=re.findall(r'[A-Z]+',a)
-        for i in range(0,len(c)):
-            c[i]=int(c[i])
-        c.sort()
-        d.sort()
-        return encodeindex.decodeList(c[0],c[1],d[0],d[1])
-        
-#    def highlight(self):  #http://stackoverflow.com/questions/13981824/how-can-i-find-a-substring-and-highlight-it-in-qtextedit
-#        cursor = self.textCursor()
-#        # Setup the desired format for matches
-#        format = QTextCharFormat()
-#        format.setBackground(QBrush(QColor("red")))
-#        # Setup the regex engine
-#        pattern = r'[ \t\n\r\f\v+-=*()][A-Z]+\d+[ \t\n\r\f\v+-=*()\.]'
-#        regex = QRegExp(pattern)
-#        # Process the displayed document
-#        pos = 0
-#        index = regex.indexIn(self.document().toPlainText(), pos)
-#        print index
-#        while (index != -1):
-#            # Select the matched text and apply the desired format
-#            cursor.setPosition(index)
-#            cursor.movePosition(QTextCursor.EndOfWord, 1)
-#            cursor.mergeCharFormat(format)
-#            # Move to the next match
-#            pos = index + regex.matchedLength()
-#            index = regex.indexIn(self.toPlainText(), pos)
+   
 
         
     def getInput(self):
         #method for parsing and colorizing keywords for cell names
         script=self.document().toHtml()
-        script='\n'+script+'\n'
-#        print script
-        pattern1=r'[ \t\n\r\f\1v+-=*()<>][A-Z]+\d+[ \t\n\r\f\v+-=*()\.><]'
-#        pattern2=r'=(.*wb.active\["[A-Z]+\d+"\].*)+'
-        pattern3=r'\[\s*[A-Z]+\d+\s*-\s*[A-Z]+\d+\s*\]'
-        re.MULTILINE=True
-        script=re.sub(pattern3,self.crep3,script)        
-#        while (re.search(pattern1,script)!=None): #capture overlapping instances of the pattern
-        script=re.sub(pattern1,self.crep1,script)
-#        script=re.sub(pattern2,self.crep2,script)
-        valstate="using cells as value"
-        script=script.replace(valstate,'<span style="color:blue;">'+valstate+'</span>')
-        script=script.replace("np.",'<span style="color:blue;">'+"np."+'</span>')
-        script=script.replace("xl.",'<span style="color:blue;">'+"xl."+'</span>')
-        script=script.replace("setActiveWorksheet",'<span style="color:blue;">'+"setActiveWorksheet"+'</span>')
-        script=script.replace("setActiveWorbook",'<span style="color:blue;">'+"setActiveWorkbook"+'</span>')
-        script=script.replace("newWorksheet",'<span style="color:blue;">'+"newWorksheet"+'</span>')
-        script=script.replace("newWorkbook",'<span style="color:blue;">'+"newWorkbook"+'</span>')
-
+        script=self.parseCode.getInput(script)
         return script
         
         
-
-    def crep1(self,matchobj):
-        a=matchobj.group()
-        a=re.sub(r'[A-Z]+\d+',self.crep1_1,a)
-        #need to implement an easy user command to change active ws
-        return a
-    def crep1_1(self,matchobj1):
-        a=matchobj1.group()
-        a='<span style="color:blue;">'+a+'</span>'
-        rep=a
-        return rep
-        
-#    def crep2(self,matchobj):
+#    def crep1(self,matchobj):
 #        a=matchobj.group()
-#        a=re.sub(r'wb.active\["[A-Z]+\d+"\]',self.crep2_2,a)
+#        a=re.sub(r'[A-Z]+\d+',self.crep1_1,a)
 #        #need to implement an easy user command to change active ws
-        return a
-    def crep2_2(self,matchobj1):
-        a=matchobj1.group()
-        rep=a+'.value'
-        return rep
-    def crep3(self,b):
-        a=b.group()
-        a='<span style="color:blue;">'+a+'</span>'
-        return a
+#        return a
+#    def crep1_1(self,matchobj1):
+#        a=matchobj1.group()
+#        a='<span style="color:blue;">'+a+'</span>'
+#        rep=a
+#        return rep
+#        
+##    def crep2(self,matchobj):
+##        a=matchobj.group()
+##        a=re.sub(r'wb.active\["[A-Z]+\d+"\]',self.crep2_2,a)
+##        #need to implement an easy user command to change active ws
+#        return a
+#    def crep2_2(self,matchobj1):
+#        a=matchobj1.group()
+#        rep=a+'.value'
+#        return rep
+#    def crep3(self,b):
+#        a=b.group()
+#        a='<span style="color:blue;">'+a+'</span>'
+#        return a
 
 """NOT MY CODE"""
 #code from https://john.nachtimwald.com/2009/08/15/qtextedit-with-line-numbers/
@@ -875,10 +582,10 @@ class commandLine(QLineEdit):
     
     def __init__(self, parent=None) :
         super(commandLine, self).__init__(parent) 
-#        self.setAcceptRichText(False)
         self.setFrame=False
         self.pastcommands=[]
         self.pastcommandsindex=-1
+        self.parseCode=codeParser()
 
 
 
@@ -886,7 +593,6 @@ class commandLine(QLineEdit):
         key = event.key()
         if key == Qt.Key_Up:
             self.pastcommandsindex+=1
-#            print self.pastcommandsindex
             if self.pastcommandsindex >= len(self.pastcommands):
                 pass
             else:
@@ -898,7 +604,7 @@ class commandLine(QLineEdit):
             else:
                 self.pastcommandsindex-=1
                 self.setText(self.pastcommands[self.pastcommandsindex])
-        super(commandLine,self).keyPressEvent(event)#wow I'm surprised this worked
+        super(commandLine,self).keyPressEvent(event)
 
     def getCode(self):
         #method for parsing and returning user input code
@@ -908,181 +614,9 @@ class commandLine(QLineEdit):
         if len(self.pastcommands)>20:
             del self.pastcommands[-1]
         self.pastcommandsindex=-1
-        print self.pastcommands
-        
-        
 
-        script='\n'+script+'\n'
-        
-
-        re.MULTILINE=True
-
-
-        ###########################################WORKS
-#    def rep1(self,matchobj):
-#        a=matchobj.group()
-#        a=re.sub(r'[A-Z]+\d+',self.rep1_1,a)
-#        #need to implement an easy user command to change active ws
-#        return a
-#    def rep1_1(self,matchobj1):
-#        a=matchobj1.group()
-#        rep='wb[self.scr.edit.WBindex][self.scr.edit.WSindex]["'+a+'"]'
-#        return rep
-#    def rep2(self,matchobj):
-#        a=matchobj.group()
-#        a=re.sub(r'wb\[self.scr.edit.WBindex\]\[self.scr.edit.WSindex\]\["[A-Z]+\d+"\]',self.rep2_2,a)
-#        #need to implement an easy user command to change active ws
-#        return a
-#    def rep2_2(self,matchobj1):
-#        a=matchobj1.group()
-#        rep=a+'.value'
-#        return rep
-#    def rep3(self,b):
-#        a=b.group()
-#        a=a.replace(' ','')
-#        c=re.findall(r'\d+',a)
-#        d=re.findall(r'[A-Z]+',a)
-#        for i in range(0,len(c)):
-#            c[i]=int(c[i])
-#        c.sort()
-#        d.sort()
-#        return encodeindex.decodeList(c[0],c[1],d[0],d[1])
-#        ##############################################Works
-
-
-        pattern0=r'[ \t\n\r\f\v+-=*()\[\]][A-Z]+\d+[ \t\n\r\f\v+-=*()\.]'
-        pattern1=r'[ \t\n\r\f\v+-=*()\[][A-Z]+\d+[ \t\n\r\f\v+-=*()\.]'
-        pattern2=r'=(.*wb\[self.scr.edit.WBindex\]\[self.scr.edit.WSindex\]\["[A-Z]+\d+"\].*)+'
-        pattern3=r'\[\s*[A-Z]+\d+\s*-\s*[A-Z]+\d+\s*\]'
-        pattern4=r'\snewWorkbook\(["\'].+["\']\)\s'
-        pattern5=r'\ssetActiveWorkbook\(\d+\)\s'
-        pattern6=r'\snewWorksheet\(["\'].+["\']\)\s'
-        pattern7=r'\ssetActiveWorksheet\(\d+\)\s'
-        re.MULTILINE=True
-        script=re.sub(pattern3,self.rep3,script)        
-        while (re.search(pattern1,script)!=None): #capture overlapping instances of the pattern
-            script=re.sub(pattern1,self.rep1,script)
-        while (re.search(pattern0,script)!=None): #capture overlapping instances of the pattern
-            script=re.sub(pattern0,self.rep0,script)
-            
-        if "using cells as value" in script:
-            script=re.sub(pattern2,self.rep2,script)
-            script=script.replace("using cells as value","\n")
-        script=re.sub(pattern4,self.rep4,script)
-        script=re.sub(pattern5,self.rep5,script)
-        script=re.sub(pattern6,self.rep6,script)
-        script=re.sub(pattern7,self.rep7,script)
-        
-        
-        if "=" not in script and "print" not in script:
-            script="print "+script
-#        a='import openpyxl as xl\nwb=xl.load_workbook("'+self.WBNames[0]+'")\n'
-        a='wb=self.scr.edit.activeWS\n'
-        script=a+script+"\nself.locals=locals()"
-#        script=re.sub('\n','\n\t',script)
-        self.setText("")
+        script=self.parseCode.getCode(script)
         return script
-        
-    def rep7(self,a):
-        a=a.group()
-#        print a
-        z=re.findall(r'\s',a)
-        b=re.search(r'\d+',a)
-        c=z[0]+"self.scr.edit.WSindex="+b.group()+z[1]
- #       print c
-        return c
-    def rep6(self,a):
-        a=a.group()
-        z=re.findall(r'\s',a)
-        b=re.search(r'[\'"].+[\'"]',a)
-#        print b
-        c="wb=self.addWS("+b.group()+")"
-#        print c
-        return z[0]+c+z[1]
-
-    def rep5(self,a):
-        a=a.group()
-#        print a
-        z=re.findall(r'\s',a)
-        b=re.search(r'\d+',a)
-        c=z[0]+"self.scr.edit.WBindex="+b.group()+z[1]  #note that this DOES NOT change the active worksheet, possibly leading to an out of bounds error if my user is not careful
- #       print c
-        return c
-        
-    def rep4(self,a):
-        a=a.group()
-        z=re.findall(r'\s',a)
-        b=re.search(r'[\'"].+[\'"]',a)
-#        print b
-        c="wb=self.addWB("+b.group()+")"
-#        a=re.sub(r'".+"',self.rep4_1,a)
-        return z[0]+c+z[1]
-    def rep0(self,matchobj):
-        a=matchobj.group()
-        a=re.sub(r'[A-Z]+\d+',self.rep1_0,a)
-        #need to implement an easy user command to change active ws
-        return a
-    def rep1_0(self,matchobj1):
-        a=matchobj1.group()
-        rep='["'+a+'"]'
-        return rep
-        
-    def rep1(self,matchobj):
-        a=matchobj.group()
-        a=re.sub(r'[A-Z]+\d+',self.rep1_1,a)
-        #need to implement an easy user command to change active ws
-        return a
-    def rep1_1(self,matchobj1):
-        a=matchobj1.group()
-        rep='wb[self.scr.edit.WBindex][self.scr.edit.WSindex]["'+a+'"]'
-        return rep
-    def rep2(self,matchobj):
-        a=matchobj.group()
-        a=re.sub(r'wb\[self.scr.edit.WBindex\]\[self.scr.edit.WSindex\]\["[A-Z]+\d+"\]',self.rep2_2,a)
-        #need to implement an easy user command to change active ws
-        return a
-    def rep2_2(self,matchobj1):
-        a=matchobj1.group()
-        rep=a+'.value'
-        return rep
-    def rep3(self,b):
-        a=b.group()
-        a=a.replace(' ','')
-        c=re.findall(r'\d+',a)
-        d=re.findall(r'[A-Z]+',a)
-        for i in range(0,len(c)):
-            c[i]=int(c[i])
-        c.sort()
-        d.sort()
-        return encodeindex.decodeList(c[0],c[1],d[0],d[1])
-#    def rep1(self,matchobj):
-#        a=matchobj.group()
-#        a=re.sub(r'[A-Z]+\d+',self.rep1_1,a)
-#        #need to implement an easy user command to change active ws
-#        return a
-#    def rep1_1(self,matchobj1):
-#        a=matchobj1.group()
-#        rep='wb.active["'+a+'"]'
-#        return rep
-#    def rep2(self,matchobj):
-#        a=matchobj.group()
-#        a=re.sub(r'wb.active\["[A-Z]+\d+"\]',self.rep2_2,a)
-#        #need to implement an easy user command to change active ws
-#        return a
-#    def rep2_2(self,matchobj1):
-#        a=matchobj1.group()
-#        rep=a+'.value'
-#        return rep
-#    def rep3(self,b):
-#        a=b.group()
-#        a=a.replace(' ','')
-#        c=re.findall(r'\d+',a)
-#        d=re.findall(r'[A-Z]+',a)
-#        for i in range(0,len(c)):
-#            c[i]=int(c[i])
-#        c.sort()
-#        d.sort()
-#        return encodeindex.decodeList(c[0],c[1],d[0],d[1])
         
         
 #if __name__ == "__main__" :
