@@ -122,7 +122,7 @@ class MainWindow(QMainWindow):
                  b.write(a)
                  b.close
             except:
-                print "error opening file"  
+                print "error saving file"  
                 
     def openscript(self):
         fname = unicode(QFileDialog.getOpenFileName(self, "Open")[0])
@@ -132,14 +132,11 @@ class MainWindow(QMainWindow):
             self.widget1.scr.edit.setPlainText(b)
         
     def newspreadsheet(self):
-#        self.widget1.scr.edit.activeWB.append(xl.Workbook())
+
         self.widget1.scr.edit.activeWB.append(xl.Workbook())
         d=self.widget1.scr.edit.activeWB[len(self.widget1.scr.edit.activeWB)-1].worksheets
         d[0]["A1"]=0
-#        d=self.widget1.scr.edit.activeWB.worksheets
         self.widget1.scr.edit.activeWS.append(d)
-#        print type(self.widget1.scr.edit.activeWS[0])
-#        self.widget1.scr.edit.activeWS=d
         z=QTableWidget(0,0,self)
         v=QTabWidget()
         v.currentChanged.connect(self.widget1.switch_tabs_ws)
@@ -159,9 +156,6 @@ class MainWindow(QMainWindow):
             self.widget1.scr.edit.activeWB.append(xl.load_workbook(fname))
             d=self.widget1.scr.edit.activeWB[len(self.widget1.scr.edit.activeWB)-1].worksheets
             self.widget1.scr.edit.activeWS.append(d)
-#            d=self.widget1.scr.edit.activeWB.worksheets
-#            self.widget1.scr.edit.activeWS.append(d)
-#     #       self.widget1.scr.edit.activeWS.append(self.widget1.scr.edit.activeWB[len(self.widget1.scr.edit.activeWB)-1].active)
             v=QTabWidget()
             for m in range(0,len(d)):
                 z=QTableWidget(0,0,self)
@@ -192,9 +186,9 @@ class MainWindow(QMainWindow):
         fname = unicode(QFileDialog.getSaveFileName(self, "Save as...")[0])
         if fname :
             try:
-                 self.widget1.scr.edit.activeWB.save(filename = fname)
+                 self.widget1.scr.edit.activeWB[self.widget1.scr.edit.WBindex].save(filename = fname)
             except:
-                print "error opening file"
+                 print "error saving file"
                 
     def normalOutputWritten(self, text):
         """Append text to the QTextEdit."""
@@ -209,7 +203,6 @@ class Form(QDialog) :
 
         # Define three text boxes.
         self.scr=LineTextWidget()
-#        self.scr = script_box()
         self.scr.edit.setPlainText("for i in range(0,5):\n\ta='output_test_'+str(i)\n\tb=open(a,'w')\n\tb.write(a)\n\tb.close\n")
         self.run_button = QPushButton('Run', self)
         self.clear_button = QPushButton('Clear Variables',self)
@@ -313,10 +306,9 @@ class Form(QDialog) :
         self.updateUI()  #update the spreadsheet viewer
         
 
-	#set variables in self.locals to show up in the variable viewer
+	#set variables in self.locals to show up in the variable viewer, with exception of those declared in the exec function above
         count=0
-        self.vars.setRowCount(len(self.locals)-6)
-
+        self.vars.setRowCount(len(self.locals)-4)
         for i in self.locals:
             if (i!="wb") and (i!="flag_error_exception") and (i!="self") and (i!="signal_sender"):
                 self.vars.setItem(count,0,QTableWidgetItem(str(i)))
@@ -422,31 +414,7 @@ class script_box(QTextEdit):
         script=self.parseCode.getInput(script)
         return script
         
-        
-#    def crep1(self,matchobj):
-#        a=matchobj.group()
-#        a=re.sub(r'[A-Z]+\d+',self.crep1_1,a)
-#        #need to implement an easy user command to change active ws
-#        return a
-#    def crep1_1(self,matchobj1):
-#        a=matchobj1.group()
-#        a='<span style="color:blue;">'+a+'</span>'
-#        rep=a
-#        return rep
-#        
-##    def crep2(self,matchobj):
-##        a=matchobj.group()
-##        a=re.sub(r'wb.active\["[A-Z]+\d+"\]',self.crep2_2,a)
-##        #need to implement an easy user command to change active ws
-#        return a
-#    def crep2_2(self,matchobj1):
-#        a=matchobj1.group()
-#        rep=a+'.value'
-#        return rep
-#    def crep3(self,b):
-#        a=b.group()
-#        a='<span style="color:blue;">'+a+'</span>'
-#        return a
+
 
 """NOT MY CODE"""
 #code from https://john.nachtimwald.com/2009/08/15/qtextedit-with-line-numbers/
@@ -607,7 +575,6 @@ class commandLine(QLineEdit):
             else:
                 self.pastcommandsindex-=1
                 self.setText(self.pastcommands[self.pastcommandsindex])
-        print self.pastcommandsindex
         super(commandLine,self).keyPressEvent(event)
                              
 
