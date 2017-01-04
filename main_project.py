@@ -17,14 +17,14 @@ import re
 import openpyxl as xl
 import encodeindex
 from codeParser import codeParser
-import pickle as pickle
+import pickle
 
 from PyQt5.QtWidgets import (QTabWidget,QApplication, QDialog, QLineEdit, QVBoxLayout,QHBoxLayout, QGridLayout, QTableWidget, QTableWidgetItem,
                              QMainWindow, QAction, QFileDialog, QMessageBox, QComboBox, QTextEdit, QPushButton,QHeaderView)
 import PyQt5.QtGui as QtGui
 from PyQt5.QtCore import QObject, pyqtSignal, Qt,QRegExp
 
-from PyQt5.Qt import QFrame, QWidget, QHBoxLayout, QPainter
+from PyQt5.Qt import QFrame, QWidget, QPainter
  
 
 class EmittingStream(QObject): #http://stackoverflow.com/questions/8356336/how-to-capture-output-of-pythons-interpreter-and-show-in-a-text-widget
@@ -592,19 +592,24 @@ class commandLine(QLineEdit):
     def keyPressEvent(self, event):
         key = event.key()
         if key == Qt.Key_Up:
-            self.pastcommandsindex+=1
-            if self.pastcommandsindex >= len(self.pastcommands):
+            
+            if self.pastcommandsindex >= len(self.pastcommands)-1:
                 pass
             else:
+                self.pastcommandsindex+=1
                 self.setText(self.pastcommands[self.pastcommandsindex])
                 
         if key == Qt.Key_Down:
             if self.pastcommandsindex <= 0:
                 pass
+            elif self.pastcommandsindex == -1:
+                pass
             else:
                 self.pastcommandsindex-=1
                 self.setText(self.pastcommands[self.pastcommandsindex])
+        print self.pastcommandsindex
         super(commandLine,self).keyPressEvent(event)
+                             
 
     def getCode(self):
         #method for parsing and returning user input code
@@ -616,6 +621,7 @@ class commandLine(QLineEdit):
         self.pastcommandsindex=-1
 
         script=self.parseCode.getCode(script)
+        self.setText("")
         return script
         
         

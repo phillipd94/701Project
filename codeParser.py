@@ -133,23 +133,22 @@ class codeParser:
     def crep1(self,matchobj):
         a=matchobj.group()
         a=re.sub(r'[A-Z]+\d+',self.crep1_1,a)
-        #need to implement an easy user command to change active ws
         return a
+        
     def crep1_1(self,matchobj1):
         a=matchobj1.group()
         a='<span style="color:blue;">'+a+'</span>'
-        rep=a
-        return rep
+        return a
         
     #    def crep2(self,matchobj):
     #        a=matchobj.group()
     #        a=re.sub(r'wb.active\["[A-Z]+\d+"\]',self.crep2_2,a)
     #        #need to implement an easy user command to change active ws
-        return a
-    def crep2_2(self,matchobj1):
-        a=matchobj1.group()
-        rep=a+'.value'
-        return rep
+#        return a
+#    def crep2_2(self,matchobj1):
+#        a=matchobj1.group()
+#        rep=a+'.value'
+#        return rep
     def crep3(self,b):
         a=b.group()
         a='<span style="color:blue;">'+a+'</span>'
