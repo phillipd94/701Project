@@ -12,13 +12,17 @@ def decodeIndex(a):
     return b
     
 def encodeIndex(a):  
-#I think we should all just take a moment to notice how clever this is
-    index='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    if a<26:
-        return index[a]
+    if a <= 26:
+        z=chr(a+64)
     else:
-        return encodeIndex(a//26) + index[a%26]
-
+        remainder = a%26
+        b=int(a/26)
+        if remainder ==0:
+            remainder=26
+            b=b-1
+        z=encodeIndex(b) + chr(remainder+64)
+    return z
+    
 def decodeList(firstrow,lastrow,firstcol,lastcol):
     A='['
     for i in range(int(firstrow),int(lastrow)+1):

@@ -361,6 +361,8 @@ class Form(QDialog) :
                         for j in range(0,int(d[v].max_column)):
                             if (str(b[j].value) != 'None'):
                                 z.setItem(i,j,QTableWidgetItem(str(b[j].value)))
+                for i in range(0,int(d[v].max_column)):
+                    z.setHorizontalHeaderItem(i,QTableWidgetItem(encodeindex.encodeIndex(i+1)))#account for the nonzero indexing of columns in excel
 
     def switch_tabs_ws(self):
         try:
