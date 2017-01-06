@@ -409,12 +409,30 @@ class script_box(QTextEdit):
         return script
    
 
-        
+        #####THIS MIGHT BE UNNECCESSARY
     def getInput(self):
         #method for parsing and colorizing keywords for cell names
         script=self.document().toHtml()
         script=self.parseCode.getInput(script)
         return script
+        #################
+        
+    def keyPressEvent(self, event):
+        #this adds automatic insertion of tabs where appropriate
+        key = event.key()
+        super(script_box,self).keyPressEvent(event)
+        print self.document().toPlainText().split("\n")
+        print key
+        if key == 16777220:#found this through trial and error, not even sure if it'll work on every computer
+            a=self.document().toPlainText().split("\n")[-2]
+            for i in range(0,a.count("\t")):
+                self.insertPlainText("\t")
+#                print "AAA"
+            if ":" in a:
+                self.insertPlainText("\t")
+#                print "BBB"
+#            print a
+
         
 
 

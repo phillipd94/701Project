@@ -79,16 +79,15 @@ class codeParser:
         a=matchobj.group()
         a=re.sub(r'[A-Z]+\d+',self.rep1_1,a)
         return a
-		
     def rep1_1(self,matchobj1):
         a=matchobj1.group()
         rep='wb[self.scr.edit.WBindex][self.scr.edit.WSindex]["'+a+'"]'
         return rep
+        
     def rep2(self,matchobj):
         a=matchobj.group()
         a=re.sub(r'wb\[self.scr.edit.WBindex\]\[self.scr.edit.WSindex\]\["[A-Z]+\d+"\]',self.rep2_2,a)
         return a
-		
     def rep2_2(self,matchobj1):
         a=matchobj1.group()
         rep=a+'.value'
