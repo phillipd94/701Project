@@ -26,10 +26,13 @@ def encodeIndex(a):
 def decodeList(firstrow,lastrow,firstcol,lastcol):
     A='['
     for i in range(int(firstrow),int(lastrow)+1):
-        for j in range(decodeIndex(firstcol)-1,decodeIndex(lastcol)):
+        for j in range(decodeIndex(firstcol),decodeIndex(lastcol)+1):
             A=A+'wb[self.scr.edit.WBindex][self.scr.edit.WSindex]["'+str(encodeIndex(j))+str(i)+'"],'
     A = A[:-1]
+#    print A+']'
     return A+']'
     
 if __name__ == '__main__':
-    print decodeList(5,11,'A','E')
+    print decodeList(1,2,'A','B')
+    
+    print decodeIndex("A")
